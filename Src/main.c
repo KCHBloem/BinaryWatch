@@ -6,7 +6,7 @@
  ******************************************************************************
  * Ways to save power:
  * 1. low-power (LPR) mode on internal regulator
- * 2. Use Low speed external oscillator, check CSSLSED flag if it's not working.
+ *
  *
  *
  *
@@ -39,6 +39,7 @@ void GPIO_State(GPIO_TypeDef *PORT, uint8_t pin, uint8_t state);
 void LPUART_Init(void);
 void Delay(uint32_t ms);
 void RTC_Init(void);
+void initInterrupt(void);
 
 typedef struct Time {
   uint8_t HT;
@@ -49,16 +50,36 @@ typedef struct Time {
   uint8_t SU;
 } Time;
 
+void updateTime(Time time) {
+  GPIO_State(GPIOB, 5, (time.HT & 0x01));
+  GPIO_State(GPIOB, 6, (time.HT & 0x02));
+
+  GPIO_State(GPIOB, 4, (time.HU & 0x01));
+  GPIO_State(GPIOA, 8, (time.HU & 0x02));
+  GPIO_State(GPIOA, 0, (time.HU & 0x04));
+  GPIO_State(GPIOA, 1, (time.HU & 0x08));
+
+  GPIO_State(GPIOB, 3, (time.MNT & 0x01));
+  GPIO_State(GPIOB, 1, (time.MNT & 0x02));
+  GPIO_State(GPIOB, 0, (time.MNT & 0x04));
+
+  GPIO_State(GPIOA, 15, (time.MNU & 0x01));
+  GPIO_State(GPIOA, 11, (time.MNU & 0x02));
+  GPIO_State(GPIOA, 10, (time.MNU & 0x04));
+  GPIO_State(GPIOA, 9, (time.MNU & 0x08));
+}
+
+uint8_t show = 0;
+Time time;
 int main(void) {
 
   SystemClockConfig();
   GPIO_Init();
   //LPUART_Init();
   RTC_Init();
+  initInterrupt();
   //printf("Binary Watch V1.0\r\n");
 
-  Time time;
-  uint8_t show = 0;
   uint8_t old = 0;
 
   while (1) {
@@ -66,68 +87,38 @@ int main(void) {
 
     if (old != time.MNU) {
       old = time.MNU;
-      time.HT = ((RTC->BKP0R & 0x300000) >> 20);
-      time.HU = ((RTC->BKP0R & 0xF0000) >> 16);
-      time.MNT = ((RTC->BKP0R & 0x7000) >> 12);
-      time.MNU = ((RTC->BKP0R & 0xF00) >> 8);
+      time.HT = ((RTC->TR & 0x300000) >> 20);
+      time.HU = ((RTC->TR & 0xF0000) >> 16);
+      time.MNT = ((RTC->TR & 0x7000) >> 12);
+      time.MNU = ((RTC->TR & 0xF00) >> 8);
       //printf("%d:%d:%d\r\n", ((time.HT * 10) + (time.HU)), ((time.MNT * 10) + time.MNU), ((time.ST * 10) + time.SU));
       if (show) {
-        GPIO_State(GPIOB, 5, (time.HT & 0x01));
-        GPIO_State(GPIOB, 6, (time.HT & 0x02));
-
-        GPIO_State(GPIOB, 4, (time.HU & 0x01));
-        GPIO_State(GPIOA, 8, (time.HU & 0x02));
-        GPIO_State(GPIOA, 0, (time.HU & 0x04));
-        GPIO_State(GPIOA, 1, (time.HU & 0x08));
-
-        GPIO_State(GPIOB, 3, (time.MNT & 0x01));
-        GPIO_State(GPIOB, 1, (time.MNT & 0x02));
-        GPIO_State(GPIOB, 0, (time.MNT & 0x04));
-
-        GPIO_State(GPIOA, 15, (time.MNU & 0x01));
-        GPIO_State(GPIOA, 11, (time.MNU & 0x02));
-        GPIO_State(GPIOA, 10, (time.MNU & 0x04));
-        GPIO_State(GPIOA, 9, (time.MNU & 0x08));
+        updateTime(time);
       }
-    }
-
-    if (BUTTON_PRESSED && (show == 0)) {
-      show = 1;
-      GPIO_State(GPIOB, 5, (time.HT & 0x01));
-      GPIO_State(GPIOB, 6, (time.HT & 0x02));
-
-      GPIO_State(GPIOB, 4, (time.HU & 0x01));
-      GPIO_State(GPIOA, 8, (time.HU & 0x02));
-      GPIO_State(GPIOA, 0, (time.HU & 0x04));
-      GPIO_State(GPIOA, 1, (time.HU & 0x08));
-
-      GPIO_State(GPIOB, 3, (time.MNT & 0x01));
-      GPIO_State(GPIOB, 1, (time.MNT & 0x02));
-      GPIO_State(GPIOB, 0, (time.MNT & 0x04));
-
-      GPIO_State(GPIOA, 15, (time.MNU & 0x01));
-      GPIO_State(GPIOA, 11, (time.MNU & 0x02));
-      GPIO_State(GPIOA, 10, (time.MNU & 0x04));
-      GPIO_State(GPIOA, 9, (time.MNU & 0x08));
-      Delay(500);
-      for (uint8_t i = 0; i <= 30; i++) {
-        if (BUTTON_PRESSED) {
-          Delay(100);
-          show = 2;
-        } else {
-          show = 1;
-          break;
-        }
-      }
-
-    } else if (BUTTON_PRESSED && (show == 1)) {
-      show = 0;
-      GPIOA_OFF;
-      GPIOB_OFF;
-      Delay(500);
     }
 
   }
+}
+
+void initInterrupt(void) {
+  SYSCFG->EXTICR[2] = 0x00;
+  EXTI->IMR |= 0x0004;
+  EXTI->RTSR |= 0x0004;
+  NVIC_EnableIRQ(EXTI2_3_IRQn);
+  NVIC_SetPriority(EXTI2_3_IRQn, 0);
+}
+
+void EXTI2_3_IRQHandler() {
+  if (show == 1) {
+    GPIOA_OFF;
+    GPIOB_OFF;
+    show = 0;
+  } else {
+    show = 1;
+    updateTime(time);
+  }
+
+  EXTI->PR |= 0x0004;
 }
 
 void Delay(uint32_t ms) {
@@ -198,7 +189,7 @@ void LPUART_Init(void) {
   RCC->CCIPR |= (0x02 << 10);
   RCC->APB1ENR |= RCC_APB1ENR_LPUART1EN; /* Low Power UART 1 Clock Enable */
 
-  LPUART1->BRR = 0x8AE3; /* Set Baudrate to 115200...       (256 x Fcpu) / 115200 = 0x8AE3*/
+  LPUART1->BRR = 0x8A1A; /* Set Baudrate to 115200...       (256 x Fcpu) / 115200 = 0x8AE3*/
 
   LPUART1->CR1 |= (0x01 << 3); /* Transmitter Enable */
   LPUART1->CR1 |= (0x01 << 0); /* LPUART Enable */
