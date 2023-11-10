@@ -40,6 +40,7 @@ void LPUART_Init(void);
 void Delay(uint32_t ms);
 void RTC_Init(void);
 void initInterrupt(void);
+void enterStopMode(void);
 
 typedef struct Time {
   uint8_t HT;
@@ -89,7 +90,7 @@ int main(void) {
   }
 
   while (1) {
-    __NOP();
+    __WFI();
   }
 }
 
@@ -119,6 +120,13 @@ void RTC_IRQHandler() {
     RTC->ISR &= ~RTC_ISR_ALRAF; /* Clear interrupt flag for alarm A */
   }
   EXTI->PR |= EXTI_PR_PR17; /* Clear EXTI Interrupt for rtc alarm event */
+  enterStopMode();
+}
+
+void enterStopMode(void) {
+  PWR->CR |= PWR_CR_ULP; /* Enter Ultra Low Power mode, Vref, programmable voltage detector, BOR and temperature sensor are disabled as well */
+  PWR->CR |= PWR_CR_LPSDSR; /* Voltage regulator switches to low-power mode when the CPU enters Deepsleep mode */
+  PWR->CR |= PWR_CR_PDDS;
 
 }
 
