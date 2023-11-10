@@ -75,40 +75,25 @@ int main(void) {
 
   SystemClockConfig();
   GPIO_Init();
-  //LPUART_Init();
+//LPUART_Init();
   RTC_Init();
   initInterrupt();
-  //printf("Binary Watch V1.0\r\n");
-
-  uint8_t old = 0;
+//printf("Binary Watch V1.0\r\n");
+  time.HT = ((RTC->TR & 0x300000) >> 20);
+  time.HU = ((RTC->TR & 0xF0000) >> 16);
+  time.MNT = ((RTC->TR & 0x7000) >> 12);
+  time.MNU = ((RTC->TR & 0xF00) >> 8);
+  time.MNU = ((RTC->TR & 0xF00) >> 8);
+  if (show) {
+    updateTime(time);
+  }
 
   while (1) {
-    time.MNU = ((RTC->TR & 0xF00) >> 8);
-
-    if (old != time.MNU) {
-      old = time.MNU;
-      time.HT = ((RTC->TR & 0x300000) >> 20);
-      time.HU = ((RTC->TR & 0xF0000) >> 16);
-      time.MNT = ((RTC->TR & 0x7000) >> 12);
-      time.MNU = ((RTC->TR & 0xF00) >> 8);
-      //printf("%d:%d:%d\r\n", ((time.HT * 10) + (time.HU)), ((time.MNT * 10) + time.MNU), ((time.ST * 10) + time.SU));
-      if (show) {
-        updateTime(time);
-      }
-    }
-
+    __NOP();
   }
 }
 
-void initInterrupt(void) {
-  SYSCFG->EXTICR[2] = 0x00;
-  EXTI->IMR |= 0x0004;
-  EXTI->RTSR |= 0x0004;
-  NVIC_EnableIRQ(EXTI2_3_IRQn);
-  NVIC_SetPriority(EXTI2_3_IRQn, 0);
-}
-
-void EXTI2_3_IRQHandler() {
+void EXTI2_3_IRQHandler() { /* Button Interrupt */
   if (show == 1) {
     GPIOA_OFF;
     GPIOB_OFF;
@@ -118,7 +103,40 @@ void EXTI2_3_IRQHandler() {
     updateTime(time);
   }
 
-  EXTI->PR |= 0x0004;
+  EXTI->PR |= EXTI_PR_PR2;
+}
+
+void RTC_IRQHandler() {
+  if (RTC->ISR & RTC_ISR_ALRAF) {
+    time.HT = ((RTC->TR & 0x300000) >> 20);
+    time.HU = ((RTC->TR & 0xF0000) >> 16);
+    time.MNT = ((RTC->TR & 0x7000) >> 12);
+    time.MNU = ((RTC->TR & 0xF00) >> 8);
+    time.MNU = ((RTC->TR & 0xF00) >> 8);
+    if (show) {
+      updateTime(time);
+    }
+    RTC->ISR &= ~RTC_ISR_ALRAF; /* Clear interrupt flag for alarm A */
+  }
+  EXTI->PR |= EXTI_PR_PR17; /* Clear EXTI Interrupt for rtc alarm event */
+
+}
+
+void initInterrupt(void) {
+  SYSCFG->EXTICR[2] = 0x00;
+  EXTI->IMR |= EXTI_IMR_IM2;
+  EXTI->RTSR |= EXTI_RTSR_RT2;
+  NVIC_EnableIRQ(EXTI2_3_IRQn);
+  NVIC_SetPriority(EXTI2_3_IRQn, 0);
+
+  EXTI->IMR |= EXTI_IMR_IM17; /* Set flags for EXTI interrupt */
+  EXTI->RTSR |= EXTI_RTSR_RT17; /* Set rising edge for exti interrupt */
+
+  NVIC_EnableIRQ(RTC_IRQn);
+  NVIC_SetPriority(RTC_IRQn, 0);
+  EXTI->PR |= EXTI_PR_PR2;
+  EXTI->PR |= EXTI_PR_PR17;
+
 }
 
 void Delay(uint32_t ms) {
@@ -214,7 +232,7 @@ void RTC_Init(void) {
   uint8_t HT = 0, HU = 0, MNT = 0, MNU = 0;
   if (RTC_INIT) {
     state = 5;
-    RTC->BKP0R = 0x00173700;
+    RTC->BKP0R = 0x00173750;
   }
   while (state == 0) {
     if (HT < 2) {
@@ -291,6 +309,13 @@ void RTC_Init(void) {
   RTC->TR = RTC->BKP0R; /*  */
   RTC->CR |= RTC_CR_FMT; /* 24-hour time format */
   RTC->CR |= RTC_CR_BYPSHAD;
+
+  RTC->CR &= ~ RTC_CR_ALRAE; /* Disable Alarm A */
+  while ((RTC->ISR & RTC_ISR_ALRAWF) != RTC_ISR_ALRAWF) { /* Wait for it to be allowed to modify Alarm A */
+  }
+  RTC->ALRMAR = RTC_ALRMAR_MSK4 | RTC_ALRMAR_MSK3 | RTC_ALRMAR_MSK2; /* MSK4 means don't care about day and time, MSK3 means hours don't care, MSK2 means minutes don't care*/
+  /* So we only care if the seconds and subseconds match meaning we only care if time is the following: xx:xx:00:00 aka once a minute */
+  RTC->CR |= RTC_CR_ALRAIE | RTC_CR_ALRAE;
 
   RTC->ISR &= ~RTC_ISR_INIT; /* Initialization mode disabled */
 
