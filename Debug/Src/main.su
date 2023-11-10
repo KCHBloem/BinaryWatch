@@ -1,0 +1,8 @@
+../Src/main.c:52:5:main	24	static
+../Src/main.c:138:6:Delay	16	static,ignoring_inline_asm
+../Src/main.c:145:5:__io_putchar	16	static
+../Src/main.c:158:6:GPIO_State	16	static
+../Src/main.c:166:6:GPIO_Init	8	static
+../Src/main.c:199:6:LPUART_Init	8	static
+../Src/main.c:213:6:RTC_Init	16	static
+../Src/main.c:318:6:SystemClockConfig	8	static
