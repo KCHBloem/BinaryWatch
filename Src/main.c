@@ -59,14 +59,13 @@ int main(void) {
 
   Time time;
   uint8_t show = 0;
-  uint8_t old = 0, new;
+  uint8_t old = 0;
 
   while (1) {
     time.MNU = ((RTC->TR & 0xF00) >> 8);
-    new = time.MNU;
 
-    if (old != new) {
-      old = new;
+    if (old != time.MNU) {
+      old = time.MNU;
       time.HT = ((RTC->BKP0R & 0x300000) >> 20);
       time.HU = ((RTC->BKP0R & 0xF0000) >> 16);
       time.MNT = ((RTC->BKP0R & 0x7000) >> 12);

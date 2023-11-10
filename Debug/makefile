@@ -33,40 +33,40 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := BinaryW2
+BUILD_ARTIFACT_NAME := BinaryWatch
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-BinaryW2.elf \
+BinaryWatch.elf \
 
 MAP_FILES += \
-BinaryW2.map \
+BinaryWatch.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-BinaryW2.list \
+BinaryWatch.list \
 
 OBJCOPY_HEX += \
-BinaryW2.hex \
+BinaryWatch.hex \
 
 OBJCOPY_BIN += \
-BinaryW2.bin \
+BinaryWatch.bin \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: BinaryW2.elf secondary-outputs
+main-build: BinaryWatch.elf secondary-outputs
 
 # Tool invocations
-BinaryW2.elf BinaryW2.map: $(OBJS) $(USER_OBJS) C:\Users\Kylian\STM32CubeIDE\workspace_1.12.1\BinaryW2\STM32L010K4TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "BinaryW2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0plus -T"C:\Users\Kylian\STM32CubeIDE\workspace_1.12.1\BinaryW2\STM32L010K4TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="BinaryW2.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+BinaryWatch.elf BinaryWatch.map: $(OBJS) $(USER_OBJS) C:\Users\Kylian\STM32CubeIDE\workspace_1.12.1\BinaryW2\STM32L010K4TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "BinaryWatch.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0plus -T"C:\Users\Kylian\STM32CubeIDE\workspace_1.12.1\BinaryW2\STM32L010K4TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="BinaryWatch.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -75,24 +75,24 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-BinaryW2.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "BinaryW2.list"
+BinaryWatch.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "BinaryWatch.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-BinaryW2.hex: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objcopy  -O ihex $(EXECUTABLES) "BinaryW2.hex"
+BinaryWatch.hex: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O ihex $(EXECUTABLES) "BinaryWatch.hex"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-BinaryW2.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "BinaryW2.bin"
+BinaryWatch.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "BinaryWatch.bin"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) BinaryW2.bin BinaryW2.elf BinaryW2.hex BinaryW2.list BinaryW2.map default.size.stdout
+	-$(RM) BinaryWatch.bin BinaryWatch.elf BinaryWatch.hex BinaryWatch.list BinaryWatch.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_HEX) $(OBJCOPY_BIN)
