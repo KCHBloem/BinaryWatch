@@ -26,7 +26,7 @@
 
 #define HIGH 1
 #define LOW 0
-#define RTC_INIT 1
+#define RTC_INIT 0
 
 #define GPIOA_OFF (GPIOA->ODR = 0x00)
 #define GPIOB_OFF (GPIOB->ODR = 0x00)
