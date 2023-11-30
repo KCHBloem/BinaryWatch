@@ -10,5 +10,11 @@
 
 
 ## Layout
+![image](https://github.com/KCHBloem/BinaryWatch/assets/71827483/16029e06-aba3-4a9a-9acc-cd75b39b8e02)
+
+
 
 ## 3D-Model
+
+![image](https://github.com/KCHBloem/BinaryWatch/assets/71827483/c681e0eb-4f52-47d1-a650-6fb7d2d4d8e9)
+![image](https://github.com/KCHBloem/BinaryWatch/assets/71827483/5f1b1704-964d-4778-b3ec-d49682676575)
